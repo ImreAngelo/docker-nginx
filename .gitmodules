@@ -1,0 +1,6 @@
+[submodule "dependencies/ngx_brotli"]
+	path = dependencies/ngx_brotli
+	url = https://github.com/google/ngx_brotli
+[submodule "dependencies/openssl"]
+	path = dependencies/openssl
+	url = https://github.com/quictls/openssl
