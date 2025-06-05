@@ -1,21 +1,31 @@
-# ======
-# Build Nginx from source
-# ======
-FROM alpine:3.21 AS compile
-ARG NGINX_VERSION=1.27.4
+ARG ALPINE_VERSION=3.22.0
+ARG MODULE_SOURCE=git
 
-# Include dependencies
+########################
+# Get modules with git #
+########################
+FROM alpine:${ALPINE_VERSION} AS source-git
 WORKDIR /home
-ADD ./dependencies .
+RUN apk add --no-cache git
+RUN git clone --recurse-submodules https://github.com/google/ngx_brotli /home/ngx_brotli
+RUN git clone https://github.com/quictls/openssl
 
-# Get required packages
+# TODO: Get from ./dependencies (raises fileNotFound: ngx_brotli/filter/config)
+
+###########################
+# Build Nginx from source #
+###########################
+FROM source-${MODULE_SOURCE} AS compile
+ARG NGINX_VERSION=1.28.0
+
 RUN apk --update add make cmake g++ zlib-dev linux-headers pcre-dev openssl-dev gd-dev
 
 # Get Nginx source code
+WORKDIR /home
 RUN wget https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz
 RUN tar xvf nginx-$NGINX_VERSION.tar.gz
 
-# Enable brotli compression
+# Build brotli module
 WORKDIR /home/ngx_brotli/deps/brotli/out
 RUN cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
 	-DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -23,7 +33,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
 	-DCMAKE_INSTALL_PREFIX=./installed ..
 RUN cmake --build . --config Release --target brotlienc
 
-# Build Nginx from source (flags from brotli install instructions)
+# Build Nginx from source with modules
 WORKDIR /home/nginx-$NGINX_VERSION
 RUN export CFLAGS="-m64 -march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections"
 RUN export LDFLAGS="-m64 -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
@@ -41,20 +51,18 @@ RUN ./configure \
 	--with-ld-opt="-L../openssl/build/lib"
 RUN make && make install
 
-# Logs
+# Setup container logging
 WORKDIR /var/log/nginx
 RUN touch /var/log/nginx/error.log
 RUN touch /var/log/nginx/access.log
 
-
-
-# ======
-# Only include necessary files
-# ======
-FROM alpine:3.20.2 AS production
+################################
+# Only include necessary files #
+################################
+FROM alpine:${ALPINE_VERSION} AS base
 
 RUN apk update
-RUN apk add pcre gd curl
+RUN apk add pcre gd
 
 # Compiled nginx files 
 WORKDIR /etc/nginx
@@ -67,26 +75,7 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log 
 
 # Config
-COPY src/nginx.conf nginx.conf
-# COPY conf.d conf.d
+# COPY src/nginx.conf nginx.conf
 
 # Startup
-CMD nginx -g "daemon off;"
-
-
-
-# ======
-# Development build with untrusted localhost certificates
-# ======
-FROM production AS development
-
-# SSL certificates
-WORKDIR /etc/nginx/certs
-RUN apk add openssl
-RUN openssl req -x509 -out localhost.com.crt -keyout localhost.com.key \
-			-newkey rsa:2048 -nodes -sha256 \
-			-subj '/CN=localhost' -extensions EXT -config <( \
-			printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
-RUN apk del openssl
-
-WORKDIR /etc/nginx
+CMD ["nginx", "-g", "daemon off;"]

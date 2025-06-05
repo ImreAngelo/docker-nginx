@@ -1,7 +1,14 @@
-
-version: '3.3'    
 services:
   nginx:
-    build:
-      context: ./
-      dockerfile: ./src/.Dockerfile
+    image: angelo/nginx:development
+    restart: on-failure
+    container_name: angel-nginx
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    volumes:
+      - tls_certs:/etc/nginx/certs
+
+volumes:
+  tls_certs:

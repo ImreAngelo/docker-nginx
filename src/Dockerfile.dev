@@ -1,0 +1,39 @@
+ARG BASE_IMAGE=angelo/nginx
+
+#####################################
+# Includes self-signed certificates #
+#####################################
+FROM ${BASE_IMAGE} AS development
+
+WORKDIR /etc/nginx/certs
+RUN apk add --no-cache openssl
+
+COPY src/defaults/openssl.conf openssl.conf
+
+# --- ECDSA CERT (prime256v1) ---
+RUN [ -f prime256v1.key ] || ( \
+    openssl ecparam -name prime256v1 -genkey -noout -out ecdsa.key && \
+    openssl req -new -x509 -key ecdsa.key \
+        -out prime256v1.crt \
+        -days 365 \
+        -subj "/C=NO/ST=Local/O=Localhost/CN=localhost" \
+)
+	
+# --- RSA (4096-bit) ---
+RUN [ -f prime256v1.key ] || ( \
+    openssl req -x509 -newkey rsa:4096 -sha256 -nodes \
+        -keyout rsa.key \
+        -out rsa.crt \
+        -days 365 \
+        -subj "/C=NO/ST=Local/O=Localhost/CN=localhost" \
+)
+
+# Root CA
+RUN cp ecdsa.crt ca.pem
+
+# Clean up
+RUN apk del openssl
+WORKDIR /etc/nginx
+
+COPY src/defaults/nginx.conf nginx.conf
+COPY src/defaults/conf.d conf.d
