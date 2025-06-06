@@ -74,17 +74,17 @@ COPY --from=compile /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=compile /var/log/nginx /var/log/nginx
 
 # Logs
-RUN ln -sf /dev/stdout /var/log/nginx/access.log 
+VOLUME ["/var/log/nginx"]
+RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log 
 
 # Set permissions
 RUN chown -R nginx:nginx /etc/nginx /var/log/nginx
 USER nginx
 
-# VOLUME ["/var/log/nginx"]
 # TODO: Include default config
 
-# EXPOSE 80 443
+EXPOSE 80 443
 
 # Startup
 CMD ["nginx", "-g", "daemon off;"]
