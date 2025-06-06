@@ -4,6 +4,7 @@ VERSION=1.0.0
 .PHONY: all base dev test
 
 all: base dev
+ci: ci-build ci-dev
 
 build:
 	docker build -f ./src/Dockerfile -t $(IMAGE_NAME):latest .
@@ -14,5 +15,17 @@ dev: build
 test: dev
 	docker compose -f 'docker-compose.yml' up -d --build 
 
-ci:
-	docker build --build-arg BASE_IMAGE=$(IMAGE_NAME) -f ./src/Dockerfile.dev -t $(IMAGE_NAME):latest .
+ci-build:
+	docker build \
+		-f ./Dockerfile \
+		-t $(IMAGE_NAME):latest \
+		--cache-from=type=gha \
+		--cache-to=type=gha,mode=max .
+
+ci-dev:
+	docker build \
+		--build-arg BASE_IMAGE=$(IMAGE_NAME) \
+		-f ./src/Dockerfile.dev \
+		-t $(IMAGE_NAME):latest \
+		--cache-from=type=gha \
+		--cache-to=type=gha,mode=max .
