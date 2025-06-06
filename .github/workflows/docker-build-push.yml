@@ -27,16 +27,21 @@ jobs:
           context: .
           file: src/Dockerfile
           push: false
-          tags: "angelo/nginx:latest"
+          tags: "angelo/nginx"
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: src/Dockerfile.dev
-          push: true
-          tags: "${{ secrets.DOCKERHUB_USER }}/nginx:latest"
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      # - name: Build and push
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: .
+      #     file: src/Dockerfile.dev
+      #     push: true
+      #     tags: "${{ secrets.DOCKERHUB_USER }}/nginx:latest"
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
+
+      - name: Tag and push image
+        run: |
+          docker tag nginx:${GITHUB_SHA::7} ${{ secrets.DOCKERHUB_USER }}/nginx:${GITHUB_SHA::7}
+          docker push ${{ secrets.DOCKERHUB_USER }}/nginx:${GITHUB_SHA::7}
