@@ -4,12 +4,12 @@ VERSION=1.0.0
 
 .PHONY: all base dev test
 
-all: base dev test
+all: base dev
 
-base:
+build:
 	docker build -f ./src/Dockerfile -t $(BASE_IMAGE):latest .
 
-dev: base
+dev: build
 	docker build --build-arg BASE_IMAGE=$(BASE_IMAGE) -f ./src/Dockerfile.dev -t $(BASE_IMAGE):development .
 
 test: dev

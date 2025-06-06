@@ -1,0 +1,39 @@
+name: Build & Publish Image
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.set-tag.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y make
+
+      - name: Build Docker image
+        run: make
+
+      - name: Set output tag
+        id: set-tag
+        run: echo "tag=nginx:latest" >> $GITHUB_OUTPUT
+
+  push:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag and push image
+        run: |
+          docker tag angelo/nginx:development ${{ secrets.DOCKERHUB_USER }}/nginx:${{ needs.build.outputs.image-tag }}
+          docker push ${{ secrets.DOCKERHUB_USER }}/custom-nginx:${{ needs.build.outputs.image-tag }}
