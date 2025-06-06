@@ -15,4 +15,4 @@ test: dev
 	docker compose -f 'docker-compose.yml' up -d --build 
 
 ci:
-	docker build --build-arg BASE_IMAGE=$(NAME) -f ./src/Dockerfile.dev -t $(NAME):latest
+	docker build --build-arg BASE_IMAGE=$(NAME) -f ./src/Dockerfile.dev -t $(NAME):latest .
