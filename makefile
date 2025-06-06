@@ -17,7 +17,7 @@ test: dev
 
 ci-build:
 	docker build \
-		-f ./Dockerfile \
+		-f ./src/Dockerfile \
 		-t $(IMAGE_NAME):latest \
 		--cache-from=type=gha \
 		--cache-to=type=gha,mode=max .
