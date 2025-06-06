@@ -12,15 +12,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # - name: Install build tools
-      #   run: sudo apt-get update && sudo apt-get install -y make
-
-      # - name: Build Docker image
-      #   run: make build
-
-      # - name: Set output tag
-      #   id: set-tag
-      #   run: echo "tag=nginx:latest" >> $GITHUB_OUTPUT
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -29,11 +20,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # - name: Tag and push image
-      #   run: |
-      #     docker tag angelo/nginx:development ${{ secrets.DOCKERHUB_USER }}/nginx:latest
-      #     docker push ${{ secrets.DOCKERHUB_USER }}/nginx:latest
 
       - name: Build base image
         uses: docker/build-push-action@v6
