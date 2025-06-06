@@ -7,8 +7,8 @@ services:
       - 80:80
       - 443:443
       - 443:443/udp
-    volumes:
-      - tls_certs:/etc/nginx/certs
+    # volumes:
+    #   - tls_certs:/etc/nginx/certs
 
 volumes:
   tls_certs:

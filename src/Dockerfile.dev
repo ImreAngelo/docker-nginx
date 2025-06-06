@@ -6,26 +6,26 @@ ARG BASE_IMAGE=angelo/nginx
 FROM ${BASE_IMAGE} AS development
 
 WORKDIR /etc/nginx/certs
-RUN apk add --no-cache openssl
+
+USER root
+RUN apk add openssl
 
 COPY src/defaults/openssl.conf openssl.conf
 
 # --- ECDSA CERT (prime256v1) ---
-RUN [ -f prime256v1.key ] || ( \
+RUN [ -f ecdsa.crt ] || ( \
     openssl ecparam -name prime256v1 -genkey -noout -out ecdsa.key && \
-    openssl req -new -x509 -key ecdsa.key \
-        -out prime256v1.crt \
+    openssl req -new -key ecdsa.key -out ecdsa.csr -config openssl.conf && \
+    openssl req -new -x509 -in ecdsa.csr -key ecdsa.key \
+        -out ecdsa.crt \
         -days 365 \
-        -subj "/C=NO/ST=Local/O=Localhost/CN=localhost" \
+        -config openssl.conf -extensions v3_req\
 )
-	
+
 # --- RSA (4096-bit) ---
-RUN [ -f prime256v1.key ] || ( \
-    openssl req -x509 -newkey rsa:4096 -sha256 -nodes \
-        -keyout rsa.key \
-        -out rsa.crt \
-        -days 365 \
-        -subj "/C=NO/ST=Local/O=Localhost/CN=localhost" \
+RUN [ -f rsa.crt ] || ( \
+    openssl req -newkey rsa:4096 -nodes -keyout rsa.key -out rsa.csr -config openssl.conf && \
+    openssl x509 -req -in rsa.csr -signkey rsa.key -out rsa.crt -days 365 -extfile openssl.conf -extensions v3_req \
 )
 
 # Root CA
@@ -37,3 +37,10 @@ WORKDIR /etc/nginx
 
 COPY src/defaults/nginx.conf nginx.conf
 COPY src/defaults/conf.d conf.d
+
+# Permissions
+RUN chown -R nginx:nginx /etc/nginx/certs
+RUN chmod 600 /etc/nginx/certs/*
+USER nginx
+
+# ENTRYPOINT [ "tail", "-f", "/dev/null" ]

@@ -62,7 +62,10 @@ RUN touch /var/log/nginx/access.log
 FROM alpine:${ALPINE_VERSION} AS base
 
 RUN apk update
-RUN apk add pcre gd
+RUN apk add --no-cache pcre gd
+
+# Create non-root user and group
+RUN addgroup -S nginx && adduser -S nginx -G nginx
 
 # Compiled nginx files 
 WORKDIR /etc/nginx
@@ -74,8 +77,14 @@ COPY --from=compile /var/log/nginx /var/log/nginx
 RUN ln -sf /dev/stdout /var/log/nginx/access.log 
 RUN ln -sf /dev/stderr /var/log/nginx/error.log 
 
-# Config
-# COPY src/nginx.conf nginx.conf
+# Set permissions
+RUN chown -R nginx:nginx /etc/nginx /var/log/nginx
+USER nginx
+
+# VOLUME ["/var/log/nginx"]
+# TODO: Include default config
+
+# EXPOSE 80 443
 
 # Startup
 CMD ["nginx", "-g", "daemon off;"]
