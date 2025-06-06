@@ -35,5 +35,5 @@ jobs:
 
       - name: Tag and push image
         run: |
-          docker tag angelo/nginx:development ${{ secrets.DOCKERHUB_USER }}/nginx:${{ needs.build.outputs.image-tag }}
-          docker push ${{ secrets.DOCKERHUB_USER }}/custom-nginx:${{ needs.build.outputs.image-tag }}
+          docker tag angelo/nginx:development ${{ secrets.DOCKERHUB_USER }}/${{ needs.build.outputs.image-tag }}
+          docker push ${{ secrets.DOCKERHUB_USER }}/${{ needs.build.outputs.image-tag }}
